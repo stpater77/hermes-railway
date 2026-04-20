@@ -12,7 +12,9 @@ ENVEOF
 
 cat > /app/.hermes/config.yaml <<CFGEOF
 model:
-  default: "${MODEL_DEFAULT:-gpt-oss:120b-cloud}"
+  default: "${MODEL_DEFAULT:-gpt-oss:120b}"
+  provider: "${MODEL_PROVIDER:-ollama-cloud}"
+  base_url: "${MODEL_BASE_URL:-https://ollama.com/v1}"
 CFGEOF
 
 if [ -n "${GOOGLE_CLIENT_SECRET_JSON:-}" ]; then
