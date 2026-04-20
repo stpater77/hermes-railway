@@ -19,5 +19,6 @@ fi
 
 export HOME=/app
 export HERMES_HOME=/app/.hermes
+export PATH="/opt/hermes-agent/venv/bin:$PATH"
 
-exec hermes gateway
+exec /opt/hermes-agent/venv/bin/hermes gateway
