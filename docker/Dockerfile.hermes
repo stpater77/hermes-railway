@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y \
+    curl git nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir hermes-agent
+
+WORKDIR /app
+
+COPY scripts/start-hermes.sh /app/start-hermes.sh
+
+EXPOSE 8642 3000
+
+CMD ["/app/start-hermes.sh"]
