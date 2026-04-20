@@ -12,7 +12,7 @@ ENVEOF
 
 cat > /app/.hermes/config.yaml <<CFGEOF
 model:
-  default: "${MODEL_DEFAULT:-gpt-5.4}"
+  default: "${MODEL_DEFAULT:-gpt-oss:120b-cloud}"
 CFGEOF
 
 if [ -n "${GOOGLE_CLIENT_SECRET_JSON:-}" ]; then
