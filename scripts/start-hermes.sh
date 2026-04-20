@@ -6,6 +6,7 @@ mkdir -p /app/.hermes
 cat > /app/.hermes/.env <<ENVEOF
 API_SERVER_ENABLED=true
 API_SERVER_KEY=${API_SERVER_KEY}
+API_SERVER_HOST=0.0.0.0
 OPENAI_API_KEY=${OPENAI_API_KEY}
 ENVEOF
 
