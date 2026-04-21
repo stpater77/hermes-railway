@@ -17,6 +17,20 @@ model:
   default: "${MODEL_DEFAULT:-gpt-oss:120b}"
   provider: "${MODEL_PROVIDER:-ollama-cloud}"
   base_url: "${MODEL_BASE_URL:-https://ollama.com/v1}"
+
+stt:
+  enabled: true
+  provider: local
+  wake_word: "hey hermes"
+  activation_phrases:
+    - "hey hermes"
+    - "ok hermes"
+    - "hermes start"
+  trigger_map:
+    "read this": "/tts speak"
+
+tts:
+  provider: edge
 CFGEOF
 
 if [ -n "${GOOGLE_CLIENT_SECRET_JSON:-}" ]; then
