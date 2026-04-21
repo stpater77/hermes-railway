@@ -33,6 +33,26 @@ tts:
   provider: edge
 CFGEOF
 
+cat > /app/.hermes/SOUL.md <<'SOULEOF'
+Behavior rules:
+
+1. For Gmail, Google Calendar, Google Drive, Google Docs, and Google Sheets, always use the google-workspace integration.
+2. Never use himalaya for Gmail or Outlook when a provider-native integration exists.
+3. Do not ask for IMAP, SMTP, app passwords, or generic mailbox credentials for Gmail or Outlook if native OAuth/API integrations are configured.
+4. If a Gmail request is made, prefer google-workspace automatically.
+5. If an Outlook request is made, prefer the Microsoft-native integration automatically when it is available.
+6. If no provider-native integration exists, state that clearly instead of falling back to himalaya.
+
+Configuration invariants:
+7. Never remove, overwrite, or change the model/provider/base_url configuration unless explicitly instructed by Sean.
+8. Preserve these model settings whenever modifying YAML or config files:
+   - model.default = gpt-oss:120b
+   - model.provider = ollama-cloud
+   - model.base_url = https://ollama.com/v1
+9. If STT, TTS, or other YAML settings are changed, merge them without deleting or replacing the model block.
+10. Treat the model/provider/base_url block as protected configuration.
+SOULEOF
+
 if [ -n "${GOOGLE_CLIENT_SECRET_JSON:-}" ]; then
   printf '%s' "$GOOGLE_CLIENT_SECRET_JSON" > /app/.hermes/google_client_secret.json
 fi
