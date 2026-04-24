@@ -10,6 +10,8 @@ API_SERVER_HOST=0.0.0.0
 OPENAI_API_KEY=${OPENAI_API_KEY}
 OLLAMA_API_KEY=${OLLAMA_API_KEY}
 OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-https://ollama.com/v1}
+HERMES_MICROSOFT_CLIENT_ID=${HERMES_MICROSOFT_CLIENT_ID:-}
+HERMES_MICROSOFT_TENANT_ID=${HERMES_MICROSOFT_TENANT_ID:-}
 ENVEOF
 
 cat > /app/.hermes/config.yaml <<CFGEOF
@@ -59,6 +61,18 @@ fi
 
 if [ -n "${GOOGLE_TOKEN_JSON:-}" ]; then
   printf '%s' "$GOOGLE_TOKEN_JSON" > /app/.hermes/google_token.json
+fi
+
+mkdir -p /app/.hermes/skills/productivity
+if [ -d /opt/microsoft-365-skill ]; then
+  rm -rf /app/.hermes/skills/productivity/microsoft-365
+  cp -R /opt/microsoft-365-skill /app/.hermes/skills/productivity/microsoft-365
+fi
+
+mkdir -p /app/.hermes/auth
+if [ -n "${MICROSOFT_TOKEN_JSON:-}" ]; then
+  printf '%s' "$MICROSOFT_TOKEN_JSON" > /app/.hermes/auth/microsoft_oauth.json
+  chmod 600 /app/.hermes/auth/microsoft_oauth.json
 fi
 
 export HOME=/app
