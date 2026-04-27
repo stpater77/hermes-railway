@@ -45,6 +45,14 @@ def graph_post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
     return _request("POST", path, payload=payload)
 
 
+def graph_patch(path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    return _request("PATCH", path, payload=payload)
+
+
+def graph_delete(path: str) -> dict[str, Any]:
+    return _request("DELETE", path)
+
+
 def list_recent_messages(limit: int = 10) -> list[dict[str, Any]]:
     data = graph_get(
         "/me/messages",
@@ -258,6 +266,85 @@ def create_calendar_event(
     }
 
     return graph_post("/me/events", payload)
+
+
+def get_calendar_event(event_id: str) -> dict[str, Any]:
+    if not event_id:
+        raise ValueError("event_id is required")
+
+    return graph_get(
+        f"/me/events/{urllib.parse.quote(event_id)}",
+        {
+            "$select": "id,subject,start,end,location,organizer,attendees,body,bodyPreview,webLink",
+        },
+    )
+
+
+def update_calendar_event(
+    event_id: str,
+    subject: str | None = None,
+    start_datetime: str | None = None,
+    end_datetime: str | None = None,
+    timezone: str = "America/New_York",
+    location: str | None = None,
+    body: str | None = None,
+    attendees: list[str] | None = None,
+) -> dict[str, Any]:
+    if not event_id:
+        raise ValueError("event_id is required")
+
+    payload: dict[str, Any] = {}
+
+    if subject is not None:
+        payload["subject"] = subject
+
+    if body is not None:
+        payload["body"] = {
+            "contentType": "Text",
+            "content": body,
+        }
+
+    if location is not None:
+        payload["location"] = {
+            "displayName": location,
+        }
+
+    if start_datetime is not None:
+        payload["start"] = {
+            "dateTime": start_datetime,
+            "timeZone": timezone,
+        }
+
+    if end_datetime is not None:
+        payload["end"] = {
+            "dateTime": end_datetime,
+            "timeZone": timezone,
+        }
+
+    if attendees is not None:
+        payload["attendees"] = [
+            {
+                "emailAddress": {
+                    "address": email,
+                },
+                "type": "required",
+            }
+            for email in attendees
+        ]
+
+    if not payload:
+        raise ValueError("No update fields provided")
+
+    return graph_patch(f"/me/events/{urllib.parse.quote(event_id)}", payload)
+
+
+def delete_calendar_event(event_id: str) -> bool:
+    if not event_id:
+        raise ValueError("event_id is required")
+
+    graph_delete(f"/me/events/{urllib.parse.quote(event_id)}")
+    return True
+
 
 
 def list_onedrive_root(limit: int = 25) -> list[dict[str, Any]]:
