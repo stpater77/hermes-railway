@@ -346,3 +346,117 @@ def create_word_docx_and_upload(filename: str, title: str, body: str) -> dict[st
         buffer.getvalue(),
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
+
+
+def list_todo_lists() -> list[dict[str, Any]]:
+    data = graph_get("/me/todo/lists")
+    return data.get("value", [])
+
+
+def create_todo_task(
+    title: str,
+    body: str = "",
+    list_id: str | None = None,
+    due_datetime: str | None = None,
+    timezone: str = "America/New_York",
+) -> dict[str, Any]:
+    if not title:
+        raise ValueError("title is required")
+
+    if not list_id:
+        lists = list_todo_lists()
+        if not lists:
+            raise RuntimeError("No Microsoft To Do lists found.")
+        list_id = lists[0]["id"]
+
+    payload: dict[str, Any] = {
+        "title": title,
+    }
+
+    if body:
+        payload["body"] = {
+            "content": body,
+            "contentType": "text",
+        }
+
+    if due_datetime:
+        payload["dueDateTime"] = {
+            "dateTime": due_datetime,
+            "timeZone": timezone,
+        }
+
+    return graph_post(f"/me/todo/lists/{list_id}/tasks", payload)
+
+
+def list_todo_tasks(list_id: str | None = None, limit: int = 25) -> list[dict[str, Any]]:
+    if not list_id:
+        lists = list_todo_lists()
+        if not lists:
+            raise RuntimeError("No Microsoft To Do lists found.")
+        list_id = lists[0]["id"]
+
+    data = graph_get(
+        f"/me/todo/lists/{list_id}/tasks",
+        {
+            "$top": max(1, min(int(limit), 100)),
+        },
+    )
+    return data.get("value", [])
+
+
+def update_todo_task(
+    task_id: str,
+    list_id: str | None = None,
+    title: str | None = None,
+    body: str | None = None,
+    status: str | None = None,
+    due_datetime: str | None = None,
+    timezone: str = "America/New_York",
+) -> dict[str, Any]:
+    if not task_id:
+        raise ValueError("task_id is required")
+
+    if not list_id:
+        lists = list_todo_lists()
+        if not lists:
+            raise RuntimeError("No Microsoft To Do lists found.")
+        list_id = lists[0]["id"]
+
+    payload: dict[str, Any] = {}
+
+    if title is not None:
+        payload["title"] = title
+
+    if body is not None:
+        payload["body"] = {
+            "content": body,
+            "contentType": "text",
+        }
+
+    if status is not None:
+        payload["status"] = status
+
+    if due_datetime is not None:
+        payload["dueDateTime"] = {
+            "dateTime": due_datetime,
+            "timeZone": timezone,
+        }
+
+    if not payload:
+        raise ValueError("No update fields provided")
+
+    return graph_patch(f"/me/todo/lists/{list_id}/tasks/{task_id}", payload)
+
+
+def delete_todo_task(task_id: str, list_id: str | None = None) -> bool:
+    if not task_id:
+        raise ValueError("task_id is required")
+
+    if not list_id:
+        lists = list_todo_lists()
+        if not lists:
+            raise RuntimeError("No Microsoft To Do lists found.")
+        list_id = lists[0]["id"]
+
+    graph_delete(f"/me/todo/lists/{list_id}/tasks/{task_id}")
+    return True
