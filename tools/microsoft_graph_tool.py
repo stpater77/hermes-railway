@@ -670,3 +670,135 @@ def delete_todo_task_by_title(title: str, list_name: str = "Tasks") -> bool:
     graph_delete(f"/me/todo/lists/{list_id}/tasks/{task_id}")
     return True
 
+
+# === Registered Microsoft 365 dispatcher tool ===
+
+MICROSOFT365_ACTIONS = {
+    "list_recent_messages": list_recent_messages,
+    "search_messages": search_messages,
+    "get_message": get_message,
+    "summarizable_message_text": summarizable_message_text,
+    "create_draft": create_draft,
+    "send_message": send_message,
+
+    "list_calendar_events": list_calendar_events,
+    "list_upcoming_calendar_events": list_upcoming_calendar_events,
+    "get_calendar_event": get_calendar_event,
+    "create_calendar_event": create_calendar_event,
+    "update_calendar_event": update_calendar_event,
+    "delete_calendar_event": delete_calendar_event,
+
+    "list_onedrive_root": list_onedrive_root,
+    "upload_text_file_to_onedrive": upload_text_file_to_onedrive,
+    "create_word_docx_and_upload": create_word_docx_and_upload,
+
+    "list_todo_lists": list_todo_lists,
+    "create_todo_task": create_todo_task,
+    "list_todo_tasks": list_todo_tasks,
+    "update_todo_task": update_todo_task,
+    "delete_todo_task": delete_todo_task,
+    "get_todo_list_id_by_name": get_todo_list_id_by_name,
+    "list_todo_tasks_by_list_name": list_todo_tasks_by_list_name,
+    "find_todo_task_by_title": find_todo_task_by_title,
+    "create_todo_task_by_list_name": create_todo_task_by_list_name,
+    "complete_todo_task_by_title": complete_todo_task_by_title,
+    "delete_todo_task_by_title": delete_todo_task_by_title,
+}
+
+
+def microsoft365(action: str, **kwargs) -> dict[str, Any]:
+    if not action:
+        raise ValueError("action is required")
+
+    action = action.strip()
+    if action not in MICROSOFT365_ACTIONS:
+        available = ", ".join(sorted(MICROSOFT365_ACTIONS))
+        raise ValueError(f"Unknown Microsoft 365 action: {action}. Available actions: {available}")
+
+    result = MICROSOFT365_ACTIONS[action](**kwargs)
+
+    return {
+        "action": action,
+        "result": result,
+    }
+
+
+MICROSOFT365_SCHEMA = {
+    "name": "microsoft365",
+    "description": (
+        "Use Microsoft 365 through Microsoft Graph. Supports Outlook Mail, Outlook Calendar, "
+        "OneDrive, Word document creation/upload, and Microsoft To Do. Use this tool instead "
+        "of calling raw function names like list_todo_lists or list_recent_messages directly. "
+        "For To Do completion use action='complete_todo_task_by_title'. For To Do deletion use "
+        "action='delete_todo_task_by_title'. Do not assign/delegate To Do tasks."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "description": "Microsoft 365 action to run.",
+                "enum": sorted(MICROSOFT365_ACTIONS.keys()),
+            },
+            "limit": {"type": "integer"},
+            "query": {"type": "string"},
+            "message_id": {"type": "string"},
+            "to": {
+                "description": "Email recipient or recipients.",
+            },
+            "subject": {"type": "string"},
+            "body": {"type": "string"},
+            "save_to_sent_items": {"type": "boolean"},
+
+            "days_ahead": {"type": "integer"},
+            "event_id": {"type": "string"},
+            "start_datetime": {"type": "string"},
+            "end_datetime": {"type": "string"},
+            "timezone": {"type": "string"},
+            "location": {"type": "string"},
+            "attendees": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+
+            "filename": {"type": "string"},
+            "content": {"type": "string"},
+            "title": {"type": "string"},
+
+            "list_id": {"type": "string"},
+            "todo_list_id": {"type": "string"},
+            "list_name": {"type": "string"},
+            "task_id": {"type": "string"},
+            "status": {"type": "string"},
+            "due_datetime": {"type": "string"},
+            "include_completed": {"type": "boolean"},
+            "name": {"type": "string"},
+        },
+        "required": ["action"],
+    },
+}
+
+
+def check_microsoft365_requirements() -> bool:
+    try:
+        get_access_token()
+        return True
+    except Exception:
+        return False
+
+
+
+
+from tools.registry import registry
+
+
+from tools.registry import registry
+
+registry.register(
+    name="microsoft365",
+    emoji="🏢",
+    toolset="microsoft365",
+    schema=MICROSOFT365_SCHEMA,
+    handler=lambda args, **kw: microsoft365(**args),
+    check_fn=check_microsoft365_requirements,
+)
