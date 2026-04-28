@@ -65,6 +65,31 @@ def list_recent_messages(limit: int = 10) -> list[dict[str, Any]]:
     return data.get("value", [])
 
 
+
+def list_recent_message_subjects(limit: int = 5) -> list[dict[str, Any]]:
+    """Return compact, JSON-safe metadata for recent Outlook messages."""
+    messages = list_recent_messages(limit=limit)
+    compact: list[dict[str, Any]] = []
+
+    for m in messages:
+        sender = (
+            ((m.get("from") or {}).get("emailAddress") or {})
+            if isinstance(m.get("from"), dict)
+            else {}
+        )
+
+        compact.append({
+            "id": m.get("id"),
+            "subject": m.get("subject"),
+            "sender_name": sender.get("name"),
+            "sender_email": sender.get("address"),
+            "receivedDateTime": m.get("receivedDateTime"),
+            "isRead": m.get("isRead"),
+            "importance": m.get("importance"),
+        })
+
+    return compact
+
 def get_message(message_id: str) -> dict[str, Any]:
     if not message_id:
         raise ValueError("message_id is required")
@@ -675,6 +700,7 @@ def delete_todo_task_by_title(title: str, list_name: str = "Tasks") -> bool:
 
 MICROSOFT365_ACTIONS = {
     "list_recent_messages": list_recent_messages,
+    "list_recent_message_subjects": list_recent_message_subjects,
     "search_messages": search_messages,
     "get_message": get_message,
     "summarizable_message_text": summarizable_message_text,
