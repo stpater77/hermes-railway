@@ -33,6 +33,13 @@ stt:
 
 tts:
   provider: edge
+
+platform_toolsets:
+  api_server:
+    - web
+    - memory
+    - todo
+    - microsoft365
 CFGEOF
 
 cat > /app/.hermes/SOUL.md <<'SOULEOF'
