@@ -11,6 +11,36 @@ Microsoft 365 integration for Hermes through Microsoft Graph and Hermes-managed 
 
 - scripts/microsoft_graph.py
 
+
+## Required Tool Usage
+
+Use the registered `microsoft365` dispatcher tool for all Microsoft 365 operations in OpenWebUI, Railway, cron, and normal Hermes chats.
+
+Do not call raw Python helper names directly as tools. The following are not valid top-level tool calls and must not be used directly:
+
+- list_recent_messages
+- search_messages
+- list_upcoming_calendar_events
+- list_calendar_events
+- list_todo_lists
+- list_todo_tasks
+- create_todo_task
+- update_todo_task
+- delete_todo_task
+- msgraph.list_todo_tasks
+
+Instead call the dispatcher:
+
+- `microsoft365(action="list_recent_messages", limit=10)`
+- `microsoft365(action="list_upcoming_calendar_events", limit=10, days_ahead=7)`
+- `microsoft365(action="list_todo_lists")`
+- `microsoft365(action="create_todo_task_by_list_name", title="...", list_name="Tasks")`
+- `microsoft365(action="find_todo_task_by_title", title="...", list_name="Tasks")`
+- `microsoft365(action="complete_todo_task_by_title", title="...", list_name="Tasks")`
+- `microsoft365(action="delete_todo_task_by_title", title="...", list_name="Tasks")`
+
+Only use `scripts/microsoft_graph.py` as implementation reference. Do not import it directly during normal chat/task execution unless explicitly debugging in terminal.
+
 ## Current Capabilities
 
 - Outlook Mail: list, search, read, summarize-ready text extraction, draft, send
@@ -73,3 +103,16 @@ Required env values in ~/.hermes/.env:
 - Advanced attachment workflows
 - Rich HTML email composition
 - Threaded replies
+
+
+## Microsoft To Do Interpretation Rules
+
+If the user asks to delete or remove a To Do task, use:
+`microsoft365(action="delete_todo_task_by_title", title="<task title>", list_name="Tasks")`
+
+If the user asks to complete, mark done, or mark complete a To Do task, use:
+`microsoft365(action="complete_todo_task_by_title", title="<task title>", list_name="Tasks")`
+
+If the user says a task is completed and asks to delete it, delete it. Do not merely mark it complete.
+
+If the task title is ambiguous, ask for confirmation before deleting or completing.
