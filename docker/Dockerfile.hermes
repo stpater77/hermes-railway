@@ -17,6 +17,32 @@ RUN python -m venv venv && \
 
 COPY agent/microsoft_oauth.py /opt/hermes-agent/agent/microsoft_oauth.py
 COPY tools/microsoft_graph_tool.py /opt/hermes-agent/tools/microsoft_graph_tool.py
+
+# Expose the registered Microsoft 365 dispatcher in Hermes default/API/cron toolsets.
+# Hermes clones upstream at build time, so patch toolsets.py inside the built image.
+RUN python - <<'PY2'
+from pathlib import Path
+
+path = Path("/opt/hermes-agent/toolsets.py")
+text = path.read_text()
+
+if '"microsoft365"' not in text.split("_HERMES_CORE_TOOLS = [", 1)[1].split("]", 1)[0]:
+    text = text.replace(
+        '    # Cross-platform messaging (gated on gateway running via check_fn)\n    "send_message",',
+        '    # Cross-platform messaging (gated on gateway running via check_fn)\n    "send_message",\n    # Microsoft 365 / Microsoft Graph dispatcher\n    "microsoft365",'
+    )
+
+# Also make the API-server-specific toolset explicit in case it bypasses _HERMES_CORE_TOOLS.
+if '"microsoft365",' not in text.split('"hermes-api-server":', 1)[1].split('"hermes-cli":', 1)[0]:
+    text = text.replace(
+        '            # Cronjob management\n            "cronjob",',
+        '            # Cronjob management\n            "cronjob",\n            # Microsoft 365 / Microsoft Graph dispatcher\n            "microsoft365",'
+    )
+
+path.write_text(text)
+print("Patched /opt/hermes-agent/toolsets.py with microsoft365")
+PY2
+
 COPY skills/productivity/microsoft-365 /opt/microsoft-365-skill
 
 WORKDIR /app
