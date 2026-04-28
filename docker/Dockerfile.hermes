@@ -43,6 +43,26 @@ path.write_text(text)
 print("Patched /opt/hermes-agent/toolsets.py with microsoft365")
 PY2
 
+# Make microsoft365 visible to Hermes platform tool selection.
+# The API server uses hermes_cli.tools_config._get_platform_tools(...),
+# which derives enabled tools from CONFIGURABLE_TOOLSETS, not only toolsets.py.
+RUN python - <<'PY3'
+from pathlib import Path
+
+path = Path("/opt/hermes-agent/hermes_cli/tools_config.py")
+text = path.read_text()
+
+if '("microsoft365",' not in text:
+    text = text.replace(
+        '    ("messaging",       "📨 Cross-Platform Messaging",  "send_message"),',
+        '    ("messaging",       "📨 Cross-Platform Messaging",  "send_message"),\n'
+        '    ("microsoft365",    "🏢 Microsoft 365",             "Outlook, Calendar, OneDrive, Word, To Do"),'
+    )
+
+path.write_text(text)
+print("Patched /opt/hermes-agent/hermes_cli/tools_config.py with microsoft365")
+PY3
+
 COPY skills/productivity/microsoft-365 /opt/microsoft-365-skill
 
 WORKDIR /app
