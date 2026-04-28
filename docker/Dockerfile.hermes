@@ -113,6 +113,8 @@ insert = """                    self._execute_tool_calls(assistant_message, mess
 
                                     final_response = _direct_response.strip()
                                     _turn_exit_reason = "direct_microsoft365_subject_lines_passthrough"
+                                    if final_response:
+                                        messages.append({"role": "assistant", "content": final_response})
                                     self._session_messages = messages
                                     self._save_session_log(messages)
                                     break
