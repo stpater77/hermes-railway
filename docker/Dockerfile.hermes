@@ -115,6 +115,11 @@ insert = """                    self._execute_tool_calls(assistant_message, mess
                                     _turn_exit_reason = "direct_microsoft365_subject_lines_passthrough"
                                     if final_response:
                                         messages.append({"role": "assistant", "content": final_response})
+                                        if self.stream_delta_callback:
+                                            try:
+                                                self.stream_delta_callback(final_response)
+                                            except Exception:
+                                                pass
                                     self._session_messages = messages
                                     self._save_session_log(messages)
                                     break
