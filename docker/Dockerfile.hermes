@@ -63,6 +63,75 @@ path.write_text(text)
 print("Patched /opt/hermes-agent/hermes_cli/tools_config.py with microsoft365")
 PY3
 
+
+# Direct passthrough for preformatted Microsoft 365 email subject lines.
+# This avoids asking the model to rewrite/copy the clean tool result, which
+# caused malformed output in OpenWebUI/API responses.
+RUN python - <<'PY4'
+from pathlib import Path
+
+path = Path("/opt/hermes-agent/run_agent.py")
+text = path.read_text()
+
+needle = """                    self._execute_tool_calls(assistant_message, messages, effective_task_id, api_call_count)
+
+                    # Reset per-turn retry counters after successful tool
+"""
+
+insert = """                    self._execute_tool_calls(assistant_message, messages, effective_task_id, api_call_count)
+
+                    # Direct-return clean preformatted Microsoft 365 subject lines.
+                    # The tool result is already the user-facing answer; avoid a second
+                    # model call that may corrupt copied text.
+                    try:
+                        _tc_names_for_passthrough = {tc.function.name for tc in assistant_message.tool_calls}
+                        if _tc_names_for_passthrough == {"microsoft365"}:
+                            _m365_args = {}
+                            for _tc in assistant_message.tool_calls:
+                                if _tc.function.name == "microsoft365":
+                                    try:
+                                        _m365_args = json.loads(_tc.function.arguments or "{}")
+                                    except Exception:
+                                        _m365_args = {}
+                                    break
+
+                            if _m365_args.get("action") == "list_recent_email_subject_lines":
+                                _last_tool_msg = None
+                                for _m in reversed(messages):
+                                    if isinstance(_m, dict) and _m.get("role") == "tool":
+                                        _last_tool_msg = _m
+                                        break
+
+                                if _last_tool_msg:
+                                    _tool_content = _last_tool_msg.get("content") or ""
+                                    _direct_response = ""
+                                    try:
+                                        _parsed_tool = json.loads(_tool_content)
+                                        _direct_response = str(_parsed_tool.get("result") or "")
+                                    except Exception:
+                                        _direct_response = str(_tool_content)
+
+                                    final_response = _direct_response.strip()
+                                    _turn_exit_reason = "direct_microsoft365_subject_lines_passthrough"
+                                    self._session_messages = messages
+                                    self._save_session_log(messages)
+                                    break
+                    except Exception as _passthrough_error:
+                        logger.debug("Microsoft365 subject-line passthrough failed: %s", _passthrough_error, exc_info=True)
+
+                    # Reset per-turn retry counters after successful tool
+"""
+
+if "direct_microsoft365_subject_lines_passthrough" in text:
+    print("run_agent.py passthrough already patched")
+else:
+    if needle not in text:
+        raise SystemExit("Could not find run_agent.py tool execution block")
+    text = text.replace(needle, insert, 1)
+    path.write_text(text)
+    print("Patched /opt/hermes-agent/run_agent.py for Microsoft 365 direct passthrough")
+PY4
+
 COPY skills/productivity/microsoft-365 /opt/microsoft-365-skill
 
 WORKDIR /app
