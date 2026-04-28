@@ -90,6 +90,18 @@ def list_recent_message_subjects(limit: int = 5) -> list[dict[str, Any]]:
 
     return compact
 
+
+def list_recent_email_subject_lines(limit: int = 5) -> str:
+    """Return recent Outlook email subjects as a preformatted numbered list."""
+    items = list_recent_message_subjects(limit=limit)
+    lines: list[str] = []
+
+    for i, item in enumerate(items, 1):
+        subject = item.get("subject") or "(no subject)"
+        lines.append(f"{i}. {subject}")
+
+    return "\n".join(lines)
+
 def get_message(message_id: str) -> dict[str, Any]:
     if not message_id:
         raise ValueError("message_id is required")
@@ -701,6 +713,7 @@ def delete_todo_task_by_title(title: str, list_name: str = "Tasks") -> bool:
 MICROSOFT365_ACTIONS = {
     "list_recent_messages": list_recent_messages,
     "list_recent_message_subjects": list_recent_message_subjects,
+    "list_recent_email_subject_lines": list_recent_email_subject_lines,
     "search_messages": search_messages,
     "get_message": get_message,
     "summarizable_message_text": summarizable_message_text,
