@@ -732,7 +732,8 @@ MICROSOFT365_ACTIONS = {
 }
 
 
-def microsoft365(action: str, **kwargs) -> dict[str, Any]:
+def microsoft365(action: str, **kwargs) -> str:
+    """Dispatch Microsoft 365 actions and return a JSON string for Hermes tool loops."""
     if not action:
         raise ValueError("action is required")
 
@@ -743,10 +744,10 @@ def microsoft365(action: str, **kwargs) -> dict[str, Any]:
 
     result = MICROSOFT365_ACTIONS[action](**kwargs)
 
-    return {
+    return json.dumps({
         "action": action,
         "result": result,
-    }
+    }, ensure_ascii=False, default=str)
 
 
 MICROSOFT365_SCHEMA = {
