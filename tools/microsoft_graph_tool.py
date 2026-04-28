@@ -547,3 +547,126 @@ def delete_todo_task(task_id: str, list_id: str | None = None) -> bool:
 
     graph_delete(f"/me/todo/lists/{list_id}/tasks/{task_id}")
     return True
+
+
+# === Normalized Microsoft To Do helpers ===
+
+def _todo_lists_by_name() -> dict[str, dict[str, Any]]:
+    return {
+        str(item.get("displayName") or "").strip().lower(): item
+        for item in list_todo_lists()
+    }
+
+
+def get_todo_list_id_by_name(name: str = "Tasks") -> str:
+    if not name:
+        name = "Tasks"
+
+    lists = _todo_lists_by_name()
+    wanted = name.strip().lower()
+
+    if wanted in lists:
+        return str(lists[wanted]["id"])
+
+    if "tasks" in lists:
+        return str(lists["tasks"]["id"])
+
+    if lists:
+        return str(next(iter(lists.values()))["id"])
+
+    raise RuntimeError("No Microsoft To Do lists found.")
+
+
+def list_todo_tasks_by_list_name(list_name: str = "Tasks", limit: int = 50) -> list[dict[str, Any]]:
+    list_id = get_todo_list_id_by_name(list_name)
+    return list_todo_tasks(list_id, limit=limit)
+
+
+def find_todo_task_by_title(title: str, list_name: str = "Tasks", include_completed: bool = True) -> dict[str, Any] | None:
+    if not title or not title.strip():
+        raise ValueError("title is required")
+
+    query = title.strip().lower()
+    tasks = list_todo_tasks_by_list_name(list_name, limit=100)
+
+    for task in tasks:
+        task_title = str(task.get("title") or "").strip().lower()
+        status = str(task.get("status") or "").strip().lower()
+
+        if not include_completed and status == "completed":
+            continue
+
+        if task_title == query:
+            task["todo_list_id"] = get_todo_list_id_by_name(list_name)
+            return task
+
+    for task in tasks:
+        task_title = str(task.get("title") or "").strip().lower()
+        status = str(task.get("status") or "").strip().lower()
+
+        if not include_completed and status == "completed":
+            continue
+
+        if query in task_title:
+            task["todo_list_id"] = get_todo_list_id_by_name(list_name)
+            return task
+
+    return None
+
+
+def create_todo_task_by_list_name(
+    title: str,
+    body: str = "",
+    list_name: str = "Tasks",
+    due_datetime: str | None = None,
+    timezone: str = "America/New_York",
+) -> dict[str, Any]:
+    if not title:
+        raise ValueError("title is required")
+
+    list_id = get_todo_list_id_by_name(list_name)
+
+    payload: dict[str, Any] = {
+        "title": title,
+    }
+
+    if body:
+        payload["body"] = {
+            "content": body,
+            "contentType": "text",
+        }
+
+    if due_datetime:
+        payload["dueDateTime"] = {
+            "dateTime": due_datetime,
+            "timeZone": timezone,
+        }
+
+    return graph_post(f"/me/todo/lists/{list_id}/tasks", payload)
+
+
+def complete_todo_task_by_title(title: str, list_name: str = "Tasks") -> dict[str, Any]:
+    task = find_todo_task_by_title(title, list_name=list_name, include_completed=True)
+    if not task:
+        raise RuntimeError(f"Microsoft To Do task not found: {title!r} in list {list_name!r}")
+
+    list_id = str(task.get("todo_list_id") or get_todo_list_id_by_name(list_name))
+    task_id = str(task["id"])
+
+    return graph_patch(
+        f"/me/todo/lists/{list_id}/tasks/{task_id}",
+        {"status": "completed"},
+    )
+
+
+def delete_todo_task_by_title(title: str, list_name: str = "Tasks") -> bool:
+    task = find_todo_task_by_title(title, list_name=list_name, include_completed=True)
+    if not task:
+        raise RuntimeError(f"Microsoft To Do task not found: {title!r} in list {list_name!r}")
+
+    list_id = str(task.get("todo_list_id") or get_todo_list_id_by_name(list_name))
+    task_id = str(task["id"])
+
+    graph_delete(f"/me/todo/lists/{list_id}/tasks/{task_id}")
+    return True
+

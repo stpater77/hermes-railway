@@ -17,7 +17,7 @@ Microsoft 365 integration for Hermes through Microsoft Graph and Hermes-managed 
 - Outlook Calendar: list events, list upcoming events, read event details, create events, update events, and delete events
 - OneDrive: list root files/folders, upload text files
 - Word: create and upload .docx documents
-- Microsoft To Do: list task lists, create tasks, list tasks, update tasks, and delete tasks
+- Microsoft To Do: list task lists, create tasks, list tasks, find tasks by title, complete tasks by title, update tasks, and delete tasks by title
 
 ## Key Functions
 
@@ -47,6 +47,10 @@ Use these functions from scripts/microsoft_graph.py:
 5. Confirm target filenames before saving files to OneDrive unless the user gave an exact filename.
 6. Do not expose tokens, client IDs, tenant IDs, or raw OAuth payloads.
 7. Do not assign or delegate Microsoft To Do tasks unless assignment support is explicitly added and tested.
+8. For Microsoft To Do, distinguish completion from deletion: if the user says "complete" or "mark done", use complete_todo_task_by_title; if the user says "delete", "remove", or "clear", use delete_todo_task_by_title.
+9. When the user gives a task title, prefer the title-based To Do helpers before manually chaining list and task IDs.
+10. If a task title is ambiguous or multiple partial matches exist, ask for confirmation before deleting or completing.
+
 
 ## Auth State
 
