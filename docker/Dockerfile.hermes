@@ -17,6 +17,7 @@ RUN python -m venv venv && \
 
 COPY agent/microsoft_oauth.py /opt/hermes-agent/agent/microsoft_oauth.py
 COPY tools/microsoft_graph_tool.py /opt/hermes-agent/tools/microsoft_graph_tool.py
+COPY tools/rss_news_tool.py /opt/hermes-agent/tools/rss_news_tool.py
 
 # Expose the registered Microsoft 365 dispatcher in Hermes default/API/cron toolsets.
 # Hermes clones upstream at build time, so patch toolsets.py inside the built image.

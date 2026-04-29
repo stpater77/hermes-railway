@@ -43,6 +43,7 @@ platform_toolsets:
     - memory
     - todo
     - microsoft365
+    - rss_news
 CFGEOF
 
 cat > /app/.hermes/SOUL.md <<'SOULEOF'
