@@ -235,14 +235,17 @@ RSS_NEWS_SCHEMA = {
 }
 
 
-try:
-    from tools.registry import registry
+def check_rss_news_requirements() -> bool:
+    return True
 
-    registry.register(
-        name="rss_news",
-        fn=rss_news,
-        schema=RSS_NEWS_SCHEMA,
-        toolset="rss_news",
-    )
-except Exception:
-    pass
+
+from tools.registry import registry
+
+registry.register(
+    name="rss_news",
+    emoji="📰",
+    toolset="rss_news",
+    schema=RSS_NEWS_SCHEMA,
+    handler=lambda args, **kw: rss_news(**args),
+    check_fn=check_rss_news_requirements,
+)
