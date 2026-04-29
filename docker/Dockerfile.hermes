@@ -86,17 +86,27 @@ insert = """                    self._execute_tool_calls(assistant_message, mess
                     # model call that may corrupt copied text.
                     try:
                         _tc_names_for_passthrough = {tc.function.name for tc in assistant_message.tool_calls}
+                        _passthrough_tool_name = None
+                        _passthrough_action = None
+
                         if _tc_names_for_passthrough == {"microsoft365"}:
-                            _m365_args = {}
+                            _passthrough_tool_name = "microsoft365"
+                            _passthrough_action = "list_recent_email_subject_lines"
+                        elif _tc_names_for_passthrough == {"rss_news"}:
+                            _passthrough_tool_name = "rss_news"
+                            _passthrough_action = "headline_lines"
+
+                        if _passthrough_tool_name:
+                            _passthrough_args = {}
                             for _tc in assistant_message.tool_calls:
-                                if _tc.function.name == "microsoft365":
+                                if _tc.function.name == _passthrough_tool_name:
                                     try:
-                                        _m365_args = json.loads(_tc.function.arguments or "{}")
+                                        _passthrough_args = json.loads(_tc.function.arguments or "{}")
                                     except Exception:
-                                        _m365_args = {}
+                                        _passthrough_args = {}
                                     break
 
-                            if _m365_args.get("action") == "list_recent_email_subject_lines":
+                            if _passthrough_args.get("action") == _passthrough_action:
                                 _last_tool_msg = None
                                 for _m in reversed(messages):
                                     if isinstance(_m, dict) and _m.get("role") == "tool":
@@ -113,7 +123,7 @@ insert = """                    self._execute_tool_calls(assistant_message, mess
                                         _direct_response = str(_tool_content)
 
                                     final_response = _direct_response.strip()
-                                    _turn_exit_reason = "direct_microsoft365_subject_lines_passthrough"
+                                    _turn_exit_reason = f"direct_{_passthrough_tool_name}_{_passthrough_action}_passthrough"
                                     if final_response:
                                         messages.append({"role": "assistant", "content": final_response})
                                         if self.stream_delta_callback:
@@ -125,7 +135,7 @@ insert = """                    self._execute_tool_calls(assistant_message, mess
                                     self._save_session_log(messages)
                                     break
                     except Exception as _passthrough_error:
-                        logger.debug("Microsoft365 subject-line passthrough failed: %s", _passthrough_error, exc_info=True)
+                        logger.debug("Direct tool-result passthrough failed: %s", _passthrough_error, exc_info=True)
 
                     # Reset per-turn retry counters after successful tool
 """
