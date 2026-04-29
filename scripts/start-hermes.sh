@@ -34,6 +34,9 @@ stt:
 tts:
   provider: edge
 
+web:
+  backend: tavily
+
 platform_toolsets:
   api_server:
     - web
